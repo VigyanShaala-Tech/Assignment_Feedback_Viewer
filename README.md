@@ -4,6 +4,7 @@ Streamlit GUI for displaying assignment statuses and  feedback using Graphy revi
 # Objective:
 To develop a user-friendly, input-based GUI using Streamlit that allows students to:
 • Select their College, Name, and Assignment
-• View current assignment status (ACCEPTED, REJECTED WITH FEEDBACK, UNDER 
-REVIEW)
+
+• View current assignment status (ACCEPTED, REJECTED WITH FEEDBACK, UNDER REVIEW)
+
 • Access all feedback (latest + historical)
