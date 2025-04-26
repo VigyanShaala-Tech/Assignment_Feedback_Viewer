@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 
 df = pd.read_csv("/home/arjun/Assignment_Feedback_Viewer/For-Sharing_Student_Assignment_Status-_-Feedback-sheet.csv")
 
@@ -33,6 +34,44 @@ def get_status(remark):
     else:
         return 'Under Review', 'Pink'
 
+def clean_line_end(line):
+    if isinstance(line, str):
+        # Removing non-ASCII characters like _x000D_
+        cleaned = re.sub(r'[^\x00-\x7F]+', '', line)
+        # To Remove specific encoding artifacts like _x000D_
+        cleaned = re.sub(r'_x[0-9A-Fa-f]{4}_', '', cleaned)
+        # To Remove all special characters except alphanumeric, spaces, periods, and the # symbol
+        cleaned = re.sub(r'[^a-zA-Z0-9\s.#]', '', cleaned)
+        # Collapse multiple spaces into a single space
+        cleaned = re.sub(r'\s+', ' ', cleaned)
+        # Removing leading and trailing whitespace
+        return cleaned.strip()
+    return line
+
+def parse_feedback(comment):
+    if pd.isna(comment) or not comment:
+        return "", ""
+    cleaned_comment = clean_line_end(comment)
+    # 1. Counting the number of '#' symbols
+    hash_count = cleaned_comment.count('#')
+    # 2. Split by '#', to get byparts
+    parts = cleaned_comment.split('#')
+    # Removing empty elements
+    parts = [part.strip() for part in parts if part.strip()]
+    # Counting the number of paragraphs after splitting
+    num_parts = len(parts)
+    if num_parts == 0:
+        # No content after cleaning
+        return "", ""
+    elif hash_count == 1:
+        # case: If there's exactly one # symbol, everything will go to current feedback
+        return "", cleaned_comment
+    else:
+        # The last part goes to current feedback, all others to history
+        history = ' # '.join(parts[:-1])
+        current = parts[-1]
+        return history, current
+
 college_list = df['Filter out your college name here'].dropna().unique()
 selected_college = st.sidebar.selectbox("College_Names", sorted(college_list))
 
@@ -55,34 +94,27 @@ else:
     comment = student_row.iloc[0][comment_col]
     
     status_text, status_color = get_status(assignment_status)
+
+    feedback_history, current_feedback = parse_feedback(comment)
+
+st.title("📄 Assignment Feedback Viewer")
+st.markdown(f"### Assignment: {selected_assignment}")
+st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold;'>{status_text}</span>", unsafe_allow_html=True)
     
-    if not pd.isna(comment):
-        paragraphs = comment.split('\n')
-        current_feedback = paragraphs[0] if paragraphs else ""
-        history = '\n'.join(paragraphs[1:]) if len(paragraphs) > 1 else ""
-    else:
-        current_feedback = ""
-        history = ""
-    
-    st.title("📄 Assignment Feedback Viewer")
-    st.markdown(f"### Assignment: {selected_assignment}")
-    st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold;'>{status_text}</span>", unsafe_allow_html=True)
-    
-    st.markdown("### Current Feedback:")
-    if not current_feedback:
+st.markdown("### Current Feedback:")
+if not current_feedback:
         st.info("No feedback provided yet.")
-    else:
-        st.text(current_feedback)
+else:
+    st.text(current_feedback)
     
-    st.markdown("### Feedback History:")
-    if not history:
+st.markdown("### Feedback History:")
+if not feedback_history:
         st.info("No feedback history available.")
-    else:
-        st.text(history)
+else:
+    st.text(feedback_history)
     
-    feedback_str = f"Assignment: {selected_assignment}\nStatus: {status_text}\n\n"
-    feedback_str += f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
-    feedback_str += f"Feedback History:\n{history if history else 'No feedback history available.'}"
+feedback_str = f"Assignment: {selected_assignment}\nStatus: {status_text}\n\n"
+feedback_str = feedback_str + f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
+feedback_str = feedback_str + f"Feedback History:\n{feedback_history if feedback_history else 'No feedback history available.'}"
     
-    st.download_button("Download Complete Feedback", feedback_str, file_name=f"{selected_student}_{selected_assignment}_feedback.txt")
-    
+st.download_button("Download Complete Feedback", feedback_str, file_name=f"{selected_student}_{selected_assignment}_feedback.txt")
