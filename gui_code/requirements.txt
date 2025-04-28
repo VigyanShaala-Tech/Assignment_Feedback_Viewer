@@ -1,5 +1,4 @@
 pandas
 streamlit
 Image
-base64
 Pillow
