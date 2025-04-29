@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import re
 from PIL import Image
-import base64
 
 co1, col2, col3 = st.columns([1, 2, 1])
 with col2:
@@ -78,15 +77,15 @@ def parse_feedback(comment):
         current = parts[-1]
         return history, current
 
+st.title(" Assignment Feedback Viewer")
 college_list = df['Filter out your college name here'].dropna().unique()
-selected_college = st.sidebar.selectbox("College_Names", sorted(college_list))
+selected_college = st.selectbox("College_Names", sorted(college_list))
 
 students = df[df['Filter out your college name here'] == selected_college]['Student Name'].dropna().unique()
-selected_student = st.sidebar.selectbox("Student_Names", sorted(students))
+selected_student = st.selectbox("Student_Names", sorted(students))
 
 assignment_list = list(list_of_assignments.keys())
-selected_assignment = st.sidebar.selectbox("Assignment_Names", assignment_list)
-
+selected_assignment = st.selectbox("Assignment_Names", assignment_list)
 status_col = list_of_assignments[selected_assignment]["status"]
 comment_col = list_of_assignments[selected_assignment]["comment"]
 
@@ -103,7 +102,6 @@ else:
 
     feedback_history, current_feedback = parse_feedback(comment)
 
-st.title(" Assignment Feedback Viewer")
 st.markdown(f"### Assignment: {selected_assignment}")
 st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold;'>{status_text}</span>", unsafe_allow_html=True)
     
@@ -115,7 +113,6 @@ else:
         if line.strip():
             st.text(f"- {line.strip()}.")
 
-    
 st.markdown("### Feedback History:")
 if not feedback_history:
         st.info("No feedback history available.")
@@ -124,8 +121,8 @@ else:
     for idx, part in enumerate(parts, start=1):
         if part.strip():
             st.text(f"- Feedback{idx}: {part.strip()}.")
-    
-feedback_str = f"Assignment: {selected_assignment}\nStatus: {status_text}\n\n"
+
+feedback_str = f"Student: {selected_student}\nCollege: {selected_college}\nAssignment: {selected_assignment}\nStatus: {status_text}\n\n"    
 feedback_str = feedback_str + f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
 feedback_str = feedback_str + f"Feedback History:\n{feedback_history if feedback_history else 'No feedback history available.'}"
     
