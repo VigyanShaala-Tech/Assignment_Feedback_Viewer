@@ -10,12 +10,12 @@ st.markdown(
         height: 100%;
         margin: 0;
         padding: 0;
-        background-color: #e6ffe6;
+        background-color: #e6ffe6 !important;
     }
 
     header, .css-18ni7ap {
         background: transparent !important;
-        box-shadow: none
+        box-shadow: none !important;
     }
 
     .status-box {
@@ -24,34 +24,36 @@ st.markdown(
         font-weight: bold;
         display: inline-block;
         margin-top: 0.5rem;
-        color: #000000;
+        color: #000000 !important;
         border: 1px solid transparent;
     }
 
+    /* HEX-based solid styles */
     .status-red {
-        background-color: rgba(255, 77, 77, 0.2);
-        border-color: rgba(255, 77, 77, 0.6);
-        color: #cc0000;
+        background-color: #ffe5e5 !important;
+        border-color: #ff4d4d !important;
+        color: #cc0000 !important;
     }
 
     .status-green {
-        background-color: rgba(40, 167, 69, 0.2);
-        border-color: rgba(40, 167, 69, 0.6);
-        color: #1e6f3d;
+        background-color: #d4edda !important;
+        border-color: #28a745 !important;
+        color: #155724 !important;
     }
 
     .status-orange {
-        background-color: rgba(255, 165, 0, 0.2);
-        border-color: rgba(255, 165, 0, 0.6);
-        color: #cc8400;
+        background-color: #ffeacc !important;
+        border-color: #ffae42 !important;
+        color: #cc8400 !important;
     }
 
     .status-pink {
-        background-color: rgba(255, 105, 180, 0.2);
-        border-color: rgba(255, 105, 180, 0.6);
-        color: #c94c9d;
+        background-color: #ffe0f0 !important;
+        border-color: #ff69b4 !important;
+        color: #c94c9d !important;
     }
 
+    /* Mobile (max-width: 600px) */
     @media only screen and (max-width: 600px) {
         .stApp {
             padding: 10px;
@@ -66,13 +68,12 @@ st.markdown(
             font-size: 0.9rem;
             padding: 0.5rem;
         }
-        .stSelectbox {
+        .stSelectbox, .stText {
             font-size: 14px;
         }
-        .stText {
-            font-size: 14px;
-        }
+    }
 
+    /* Tablet (601px to 1024px) */
     @media only screen and (min-width: 601px) and (max-width: 1024px) {
         .stApp {
             padding: 15px;
@@ -87,12 +88,10 @@ st.markdown(
             font-size: 1rem;
         }
     }
-    }
     </style>
     """,
     unsafe_allow_html=True
 )
-
 
 co1, col2, col3 = st.columns([1, 2, 1])
 with col2:
