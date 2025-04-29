@@ -51,10 +51,48 @@ st.markdown(
         border-color: rgba(255, 105, 180, 0.6);
         color: #c94c9d;
     }
+
+    @media only screen and (max-width: 600px) {
+        .stApp {
+            padding: 10px;
+        }
+        .css-1kyxreq, .css-1v0mbdj, .block-container {
+            padding: 1rem !important;
+        }
+        h1, h2, h3 {
+            font-size: 1.2rem !important;
+        }
+        .status-box {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+        }
+        .stSelectbox {
+            font-size: 14px;
+        }
+        .stText {
+            font-size: 14px;
+        }
+
+    @media only screen and (min-width: 601px) and (max-width: 1024px) {
+        .stApp {
+            padding: 15px;
+        }
+        .block-container {
+            padding: 2rem 1.5rem !important;
+        }
+        h1, h2, h3 {
+            font-size: 1.4rem !important;
+        }
+        .status-box {
+            font-size: 1rem;
+        }
+    }
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 co1, col2, col3 = st.columns([1, 2, 1])
 with col2:
