@@ -5,99 +5,84 @@ from PIL import Image
 
 st.markdown("""
 <style>
-:root {
-    color-scheme: only light;
-}
-
 html, body, .stApp {
-    background-color: #e6ffe6 !important;
-    color: black !important;
+   height: 100%;
+   margin: 0;
+   padding: 0;
+   background-color: #e6ffe6 !important;
 }
 
-{
-    background-color: transparent !important;
-    color: inherit !important;
+header, .css-18ni7ap {
+   background: transparent !important;
+   box-shadow: none !important;
 }
 
-
-h1, h2, h3, h4, h5, h6, p, span, div, label {
-    color: black !important;
-}
-
-.css-1kyxreq, .css-1v0mbdj, .css-1cpxqw2, .stSelectbox, .stText {
-    background-color: white !important;
-    color: black !important;
-    border: 1px solid #ccc !important;
-    border-radius: 6px !important;
-}
-
-@media only screen and (max-width: 600px) {
-    .stApp {
-        padding: 10px;
-    }
-    .css-1kyxreq, .css-1v0mbdj, .block-container {
-        padding: 1rem !important;
-    }
-    h1, h2, h3 {
-        font-size: 1.2rem !important;
-    }
-    .status-box {
-        font-size: 0.9rem;
-        padding: 0.5rem;
-    }
-    .stSelectbox, .stText {
-        font-size: 14px !important;
-    }
-}
-
-@media only screen and (min-width: 601px) and (max-width: 1024px) {
-    .stApp {
-        padding: 15px;
-    }
-    .block-container {
-        padding: 2rem 1.5rem !important;
-    }
-    h1, h2, h3 {
-        font-size: 1.4rem !important;
-    }
-    .status-box {
-        font-size: 1rem;
-    }
-}
-
-/* Custom status styling */
 .status-box {
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-weight: bold;
-    display: inline-block;
-    margin-top: 0.5rem;
-    color: #000000 !important;
-    border: 1px solid transparent;
+   padding: 0.75rem 1rem;
+   border-radius: 8px;
+   font-weight: bold;
+   display: inline-block;
+   margin-top: 0.5rem;
+   color: #000000 !important;
+   border: 1px solid transparent;
 }
 
 .status-red {
-    background-color: #ffe5e5 !important;
-    border-color: #ff4d4d !important;
-    color: #cc0000 !important;
+   background-color: #ffe5e5 !important;
+   border-color: #ff4d4d !important;
+   color: #cc0000 !important;
 }
 
 .status-green {
-    background-color: #d4edda !important;
-    border-color: #28a745 !important;
-    color: #155724 !important;
+   background-color: #d4edda !important;
+   border-color: #28a745 !important;
+   color: #155724 !important;
 }
 
 .status-orange {
-    background-color: #ffeacc !important;
-    border-color: #ffae42 !important;
-    color: #cc8400 !important;
+   background-color: #ffeacc !important;
+   border-color: #ffae42 !important;
+   color: #cc8400 !important;
 }
 
 .status-pink {
-    background-color: #ffe0f0 !important;
-    border-color: #ff69b4 !important;
-    color: #c94c9d !important;
+   background-color: #ffe0f0 !important;
+   border-color: #ff69b4 !important;
+   color: #c94c9d !important;
+}
+
+@media only screen and (max-width: 600px) {
+   .stApp {
+       padding: 10px;
+   }
+   .css-1kyxreq, .css-1v0mbdj, .block-container {
+       padding: 1rem !important;
+   }
+   h1, h2, h3 {
+       font-size: 1.2rem !important;
+   }
+   .status-box {
+       font-size: 0.9rem;
+       padding: 0.5rem;
+   }
+   .stSelectbox, .stText {
+       font-size: 14px !important;
+   }
+}
+
+@media only screen and (min-width: 601px) and (max-width: 1024px) {
+   .stApp {
+       padding: 15px;
+   }
+   .block-container {
+       padding: 2rem 1.5rem !important;
+   }
+   h1, h2, h3 {
+       font-size: 1.4rem !important;
+   }
+   .status-box {
+       font-size: 1rem;
+   }
 }
 </style>
 """, unsafe_allow_html=True)
