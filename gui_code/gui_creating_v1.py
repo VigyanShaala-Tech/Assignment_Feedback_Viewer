@@ -156,8 +156,7 @@ else:
     feedback_history, current_feedback = parse_feedback(comment)
 
 st.markdown(f"### Assignment: {selected_assignment}")
-st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold;'>{status_text}</span>", unsafe_allow_html=True)
-    
+st.markdown(f"<div class='status-box status-{status_color}'>Status: {status_text}</div>", unsafe_allow_html=True)
 st.markdown("### Current Feedback:")
 if not current_feedback:
         st.info("No feedback provided yet.")
