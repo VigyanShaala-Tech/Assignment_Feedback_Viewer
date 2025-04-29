@@ -58,7 +58,7 @@ st.markdown(
 
 co1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    st.image("gui_code/VS-logo.png", width=150)
+    st.image("gui_code/VS-logo.png", width=250)
 
 df = pd.read_csv("gui_code/For-Sharing_Student_Assignment_Status-_-Feedback-sheet.csv")
 
