@@ -3,6 +3,59 @@ import pandas as pd
 import re
 from PIL import Image
 
+st.markdown(
+    """
+    <style>
+    html, body, .stApp {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #e6ffe6;
+    }
+
+    header, .css-18ni7ap {
+        background: transparent !important;
+        box-shadow: none
+    }
+
+    .status-box {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-weight: bold;
+        display: inline-block;
+        margin-top: 0.5rem;
+        color: #000000;
+        border: 1px solid transparent;
+    }
+
+    .status-red {
+        background-color: rgba(255, 77, 77, 0.2);
+        border-color: rgba(255, 77, 77, 0.6);
+        color: #cc0000;
+    }
+
+    .status-green {
+        background-color: rgba(40, 167, 69, 0.2);
+        border-color: rgba(40, 167, 69, 0.6);
+        color: #1e6f3d;
+    }
+
+    .status-orange {
+        background-color: rgba(255, 165, 0, 0.2);
+        border-color: rgba(255, 165, 0, 0.6);
+        color: #cc8400;
+    }
+
+    .status-pink {
+        background-color: rgba(255, 105, 180, 0.2);
+        border-color: rgba(255, 105, 180, 0.6);
+        color: #c94c9d;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 co1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.image("gui_code/VS-logo.png", width=150)
