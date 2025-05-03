@@ -36,7 +36,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-st.image( "gui_code/VS-logo.png", width=250, use_container_width=True)
+st.image( "gui_code/VS-logo.png", width=250, use_container_width=False)
 
 df = pd.read_csv('gui_code/For-Sharing_Student_Assignment_Status-_-Feedback-sheet.csv')
 # Mapping of assignment-names to their respective status and comment columns
