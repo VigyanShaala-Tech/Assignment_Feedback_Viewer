@@ -37,12 +37,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-co1, col2, col3 = st.columns([1, 3, 1])
-with col2:
-    st.image("gui_code/VS-logo.png", width=250)
+st.markdown(
+    """
+    <div style='text-align: center;'>
+        <img src='gui_code/VS-logo.png' width='250'>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 df = pd.read_csv('gui_code/For-Sharing_Student_Assignment_Status-_-Feedback-sheet.csv')
-
 # Mapping of assignment-names to their respective status and comment columns
 list_of_assignments = {
     "Goal Setting": {
