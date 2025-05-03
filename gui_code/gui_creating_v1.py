@@ -34,6 +34,18 @@ st.markdown("""
         border-color: #ff66cc;
         color: #ffcce6;
     }
+
+    .centered-logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+    }
+
+    .centered-logo img {
+        width: 300px; /* Adjust width as needed */
+        height: auto;
+    }
     </style>
 """, unsafe_allow_html=True)
 
