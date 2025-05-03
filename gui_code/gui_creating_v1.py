@@ -37,11 +37,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-co1, col2, col3 = st.columns([1, 2, 1])
+co1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    st.image("gui_code/VS-logo.png", width=250)
+    st.image("VS-logo.png", width=250)
 
-df = pd.read_csv("gui_code/For-Sharing_Student_Assignment_Status-_-Feedback-sheet.csv")
+df = pd.read_csv("For-Sharing_Student_Assignment_Status-_-Feedback-sheet.csv")
 
 # Mapping of assignment-names to their respective status and comment columns
 list_of_assignments = {
@@ -131,9 +131,7 @@ if student_row.empty:
 else:
     assignment_status = student_row.iloc[0][status_col]
     comment = student_row.iloc[0][comment_col]
-    
     status_text, status_color = get_status(assignment_status)
-
     feedback_history, current_feedback = parse_feedback(comment)
 
 st.markdown(f"### Assignment: {selected_assignment}")
