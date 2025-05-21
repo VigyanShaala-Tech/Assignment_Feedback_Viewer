@@ -39,7 +39,7 @@ st.markdown("""
 
 co1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    st.image("gui_code/logo.png", use_container_width = True, width=250)
+    st.image("gui_code/logo.png", use_container_width = True, width=200)
 
 df = pd.read_csv('gui_code/For-Sharing_Student_Assignment_Status-_-Feedback-sheet.csv')
 # Mapping of assignment-names to their respective status and comment columns
