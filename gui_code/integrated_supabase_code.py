@@ -173,7 +173,7 @@ else:
 
     time = datetime.now(pytz.timezone('Asia/Kolkata'))
     timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
-    log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text,feedback_history, current_feedback, "Viewed"]
+    log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text,"Viewed"]
 
     try:
         sheet.append_row(log_row)
