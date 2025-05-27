@@ -153,38 +153,39 @@ else:
     feedback_history, current_feedback = parse_feedback(comment)
 
     st.markdown(f"### Assignment: {selected_assignment}")
-    st.markdown(f"<div class='status-box status-{status_color}'>Status: {status_text}</div>", unsafe_allow_html=True)
-    st.markdown("### Current Feedback:")
-    if not current_feedback:
-        st.info("No feedback provided yet.")
-    else:
-        for line in current_feedback.split('\n'):
-            if line.strip():
-                st.text(f"- {line.strip()}.")
+    if st.button("Show Assignment Status"):
+        st.markdown(f"<div class='status-box status-{status_color}'>Status: {status_text}</div>", unsafe_allow_html=True)
+        st.markdown("### Current Feedback:")
+        if not current_feedback:
+            st.info("No feedback provided yet.")
+        else:
+            for line in current_feedback.split('\n'):
+                if line.strip():
+                    st.text(f"- {line.strip()}.")
 
-    st.markdown("### Feedback History:")
-    if not feedback_history:
-        st.info("No feedback history available.")
-    else:
-        parts = feedback_history.split('#')
-        for idx, part in enumerate(parts, start=1):
-            if part.strip():
-                st.text(f"- Feedback{idx}: {part.strip()}.")
+        st.markdown("### Feedback History:")
+        if not feedback_history:
+            st.info("No feedback history available.")
+        else:
+            parts = feedback_history.split('#')
+            for idx, part in enumerate(parts, start=1):
+                if part.strip():
+                    st.text(f"- Feedback{idx}: {part.strip()}.")
 
-    time = datetime.now(pytz.timezone('Asia/Kolkata'))
-    timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
-    feedback_str = f"Student: {selected_student}\nCollege: {selected_college}\nAssignment: {selected_assignment}\nStatus: {status_text}\n\n"    
-    feedback_str += f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
-    feedback_str += f"Feedback History:\n{feedback_history if feedback_history else 'No feedback history available.'}"
-    download_clicked = st.download_button(
-    "Download Complete Feedback",
-    feedback_str,
-    file_name=f"{selected_student}_{selected_assignment}_feedback.txt"
-)
-    action = "Downloaded" if download_clicked else "Viewed"
-    log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, action, current_feedback or "No feedback Provided"]
+        time = datetime.now(pytz.timezone('Asia/Kolkata'))
+        timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
+        feedback_str = f"Student: {selected_student}\nCollege: {selected_college}\nAssignment: {selected_assignment}\nStatus: {status_text}\n\n"    
+        feedback_str += f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
+        feedback_str += f"Feedback History:\n{feedback_history if feedback_history else 'No feedback history available.'}"
+        download_clicked = st.download_button(
+        "Download Complete Feedback",
+        feedback_str,
+        file_name=f"{selected_student}_{selected_assignment}_feedback.txt"
+        )
+        action = "Downloaded" if download_clicked else "Viewed"
+        log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, action, current_feedback or "No feedback Provided"]
 
-    try:
-        sheet.append_row(log_row)
-    except Exception as e:
-        st.error(f"Could not log activity: {str(e)}")
+        try:
+            sheet.append_row(log_row)
+        except Exception as e:
+            st.error(f"Could not log activity: {str(e)}")
