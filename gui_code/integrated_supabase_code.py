@@ -6,6 +6,7 @@ from supabase import create_client, Client
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
+import pytz
 
 SUPABASE_URL = st.secrets['supabase']['supabase_url']
 SUPABASE_KEY = st.secrets['supabase']['supabase_key']
@@ -170,7 +171,7 @@ else:
             if part.strip():
                 st.text(f"- Feedback{idx}: {part.strip()}.")
     
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.now(pytz.timezone('Asia/Kolkata'))
     log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, "Viewed"]
 
     try:
