@@ -171,7 +171,7 @@ else:
             if part.strip():
                 st.text(f"- Feedback{idx}: {part.strip()}.")
     
-    timestamp = datetime.now(str(pytz.timezone('Asia/Kolkata'))
+    timestamp = datetime.now(str(pytz.timezone('Asia/Kolkata')))
     log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, "Viewed"]
 
     try:
