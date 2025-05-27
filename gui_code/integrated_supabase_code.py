@@ -102,6 +102,8 @@ def get_status(remark):
         return "Accepted", "green"
     elif remark.strip().lower() == 'rejected':
         return "Rejected", "orange"
+    else:
+        return "Under Review", "pink"
 
 def clean_line_end(line):
     if isinstance(line, str):
