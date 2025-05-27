@@ -4,3 +4,4 @@ Image
 Pillow
 supabase
 gspread
+pytz
