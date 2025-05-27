@@ -3,3 +3,4 @@ streamlit
 Image
 Pillow
 supabase
+gspread
