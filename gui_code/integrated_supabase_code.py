@@ -182,7 +182,7 @@ else:
     file_name=f"{selected_student}_{selected_assignment}_feedback.txt"
 )
     action = "Downloaded" if download_clicked else "Viewed"
-    log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, action, current_feedback.strip() if current_feedback else "No feedback provided."]
+    log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, action, current_feedback or "No feedback provided."]
 
     try:
         sheet.append_row(log_row)
