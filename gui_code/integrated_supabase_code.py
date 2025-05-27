@@ -173,6 +173,7 @@ else:
 
     time = datetime.now(pytz.timezone('Asia/Kolkata'))
     timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
+    action = "Downloaded" if download_clicked else "Viewed"
     log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text,action]
 
     try:
@@ -189,5 +190,3 @@ else:
     feedback_str,
     file_name=f"{selected_student}_{selected_assignment}_feedback.txt"
 )
-
-action = "Downloaded" if download_clicked else "Viewed"
