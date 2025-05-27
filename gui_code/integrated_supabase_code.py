@@ -174,14 +174,23 @@ else:
 
         time = datetime.now(pytz.timezone('Asia/Kolkata'))
         timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
-        feedback_str = f"Student: {selected_student}\nCollege: {selected_college}\nAssignment: {selected_assignment}\nStatus: {status_text}\n\n"    
-        feedback_str += f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
-        feedback_str += f"Feedback History:\n{feedback_history if feedback_history else 'No feedback history available.'}"
-        download_clicked = st.download_button("Download Complete Feedback",feedback_str,file_name=f"{selected_student}_{selected_assignment}_feedback.txt")
-        action = "Downloaded" if download_clicked else "Viewed"
-        log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, action, current_feedback or "No feedback Provided"]
-
+        log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, "Viewed", current_feedback or "No feedback Provided"]
         try:
             sheet.append_row(log_row)
         except Exception as e:
             st.error(f"Could not log activity: {str(e)}")
+
+    feedback_str = f"Student: {selected_student}\nCollege: {selected_college}\nAssignment: {selected_assignment}\nStatus: {status_text}\n\n"    
+    feedback_str += f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
+    feedback_str += f"Feedback History:\n{feedback_history if feedback_history else 'No feedback history available.'}"
+
+    download_clicked = st.download_button("Download Complete Feedback",feedback_str,file_name=f"{selected_student}_{selected_assignment}_feedback.txt")
+    if download_clicked:
+        time = datetime.now(pytz.timezone('Asia/Kolkata'))
+        timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
+        log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, "Downloaded", current_feedback or "No feedback Provided"]
+        try:
+            sheet.append_row(log_row)
+        except Exception as e:
+            st.error(f"Could not log activity: {str(e)}")
+        
