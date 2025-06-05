@@ -38,6 +38,7 @@ st.markdown("""
         padding: 0.75rem 1rem;
         border-radius: 8px;
         font-weight: bold;
+        font-size: 1.2rem;
         display: inline-block;
         margin-top: 0.5rem;
         border: 1px solid transparent;
@@ -47,21 +48,25 @@ st.markdown("""
         background-color: #660000;
         border-color: #cc0000;
         color: #ffcccc;
+            font-size: 1.5rem;
     }
     .status-green {
-        background-color: #003300;
+        background-color: #69AB4A;
         border-color: #00cc66;
-        color: #ccffcc;
+        color: #000000;
+        font-size: 1.5rem;
     }
     .status-orange {
-        background-color: #663300;
+        background-color: #F79630;
         border-color: #ffaa00;
-        color: #ffdd99;
+        color: #000000;
+        font-size: 1.5rem;
     }
     .status-pink {
-        background-color: #4d0033;
-        border-color: #ff66cc;
-        color: #ffcce6;
+        background-color: #FFCC29;
+        border-color: #ffccce6;
+        color: #000000;
+        font-size: 1.5rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -101,7 +106,7 @@ def get_status(remark):
     elif remark.strip().lower() == 'accepted':
         return "Accepted", "green"
     elif remark.strip().lower() == 'rejected':
-        return "Rejected", "orange"
+        return "Improve and Resubmit", "orange"
     else:
         return "Under Review", "pink"
 
@@ -132,14 +137,26 @@ def parse_feedback(comment):
         return history, current
 
 st.title(" Assignment Feedback Viewer")
-college_list = df['college_name'].dropna().unique()
-selected_college = st.selectbox("College Names", sorted(college_list))
+col1, col2 = st.columns([12, 1])
+with col1:
+    st.info("Please click adjacent refresh button to refresh the app")
+
+with col2:
+    if st.button("↻", help="Click to refresh"):
+        st.session_state["college_select"] = "-- Select College --"
+
+college_list = ['-- Select College --'] + df['college_name'].dropna().unique().tolist()
+selected_college = st.selectbox("College Names", sorted(college_list), index=0, key="college_select")
+if selected_college == '-- Select College --':
+    st.warning("Please select a college to view student assignments.")
+    st.stop()
 
 students = df[df['college_name'] == selected_college]['student_name'].dropna().unique()
-selected_student = st.selectbox("Student Names", sorted(students))
+selected_student = st.selectbox("Student Names", sorted(students), key="student_select")
 
 assignment_list = list(list_of_assignments.keys())
-selected_assignment = st.selectbox("Assignment Names", assignment_list)
+selected_assignment = st.selectbox("Assignment Names", assignment_list, key="assignment_select")
+
 status_col = list_of_assignments[selected_assignment]["status"]
 comment_col = list_of_assignments[selected_assignment]["comment"]
 
@@ -156,7 +173,7 @@ else:
 
     st.markdown(f"### Assignment: {selected_assignment}")
     if st.button("Show Assignment Status"):
-        st.markdown(f"<div class='status-box status-{status_color}'>Status: {status_text}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='status-box status-{status_color}'>{status_text}</div>", unsafe_allow_html=True)
         st.markdown("### Current Feedback:")
         if not current_feedback:
             st.info("No feedback provided yet.")
