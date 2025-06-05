@@ -73,7 +73,7 @@ st.markdown("""
 
 co1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    st.image("/gui_code/log.png", width=350)
+    st.image("gui_code/log.png", width=350)
 
 df = load_data_from_supabase()
 
