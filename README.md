@@ -6,6 +6,6 @@ To develop a user-friendly, input-based GUI using Streamlit that allows students
 
 • Select their College, Name, and Assignment
 
-• View current assignment status (ACCEPTED, REJECTED WITH FEEDBACK, UNDER REVIEW)
+• View current assignment status (ACCEPTED, IMPROVE AND RE-SUBMIT, UNDER REVIEW, NOT SUBMITTED)
 
 • Access all feedback (latest + historical)
