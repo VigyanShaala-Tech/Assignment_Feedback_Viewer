@@ -23,14 +23,27 @@ def init_supabase():
 
 supabase: Client = init_supabase()
 
+def fetch_all_rows():
+    all_rows = []
+    page_size = 1000
+    for i in range(0, 10000, page_size):  # up to 10,000 rows
+        response = supabase.table('Student_Assignment_Status').select("*").range(i, i + page_size - 1).execute()
+        data = response.data
+        if not data:
+            break
+        all_rows.extend(data)
+        if len(data) < page_size:
+            break
+    return pd.DataFrame(all_rows)
+
 @st.cache_data(ttl=300)
 def load_data_from_supabase():
     try:
-        response = supabase.table('Student_Assignment_Status').select("*").execute()
-        return pd.DataFrame(response.data)
+        return fetch_all_rows()
     except Exception as e:
         st.error(f"Error loading data from Supabase: {str(e)}")
         return pd.DataFrame()
+
 
 st.markdown("""
     <style>
