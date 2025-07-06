@@ -95,6 +95,10 @@ if df.empty:
     st.stop()
 
 list_of_assignments = {
+    "SWOT": {
+        "status": "assignment_swot",
+        "comment": "comments_assignment_swot"
+    },    
     "Goal Setting": {
         "status": "assignment_goal_setting",
         "comment": "comments_assignment_goal_setting"
