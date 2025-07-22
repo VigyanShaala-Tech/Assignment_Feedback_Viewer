@@ -114,6 +114,10 @@ list_of_assignments = {
     "Career Journal": {
         "status": "assignment_career_journal",
         "comment": "comments_assignment_career_journal"
+    },
+    "Career Map": {
+        "status": "assignment_career_map",
+        "comment": "comments_assignment_career_map"
     }
 }
 
@@ -168,8 +172,19 @@ if selected_college == '-- Select College --':
     st.warning("Please select a college to view student assignments.")
     st.stop()
 
-students = df[df['college_name'] == selected_college]['student_name'].dropna().unique()
+college_students = df[df['college_name'] == selected_college][['student_name', 'email']].dropna(subset=['student_name'])
+students = college_students['student_name'].unique()
+
 selected_student = st.selectbox("Student Names", sorted(students), key="student_select")
+
+# Check if the selected student name appears more than once
+student_entries = college_students[college_students['student_name'] == selected_student]
+
+if len(student_entries) > 1:
+    # Show dropdown of emails if multiple students with the same name
+    selected_email = st.selectbox("Select Email ID", student_entries['email'].unique(), key="email_select")
+else:
+    selected_email = student_entries['email'].iloc[0]
 
 assignment_list = list(list_of_assignments.keys())
 selected_assignment = st.selectbox("Assignment Names", assignment_list, key="assignment_select")
@@ -177,8 +192,13 @@ selected_assignment = st.selectbox("Assignment Names", assignment_list, key="ass
 status_col = list_of_assignments[selected_assignment]["status"]
 comment_col = list_of_assignments[selected_assignment]["comment"]
 
-student_row = df[(df['college_name'] == selected_college) &
-                 (df['student_name'] == selected_student)]
+if len(student_entries) > 1:
+    student_row = df[(df['college_name'] == selected_college) &
+                     (df['student_name'] == selected_student) &
+                     (df['email'] == selected_email)]
+else:
+    student_row = df[(df['college_name'] == selected_college) &
+                     (df['student_name'] == selected_student)]
 
 if student_row.empty:
     st.warning("No data found for the selected combination.")
