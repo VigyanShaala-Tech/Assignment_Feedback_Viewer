@@ -118,6 +118,10 @@ list_of_assignments = {
     "Career Map": {
         "status": "assignment_career_map",
         "comment": "comments_assignment_career_map"
+    },
+    "Skill Gap Finder": {
+        "status": "assignment_skill_gap_finder",
+        "comment": "comments_assignment_skill_gap_finder"
     }
 }
 
