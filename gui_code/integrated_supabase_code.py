@@ -122,6 +122,10 @@ list_of_assignments = {
     "Skill Gap Finder": {
         "status": "assignment_skill_gap_finder",
         "comment": "comments_assignment_skill_gap_finder"
+    },
+    "Career_Vision_Board": {
+        "status": "assignment_career_vision_board",
+        "comment": "comments_assignment_career_vision_board"
     }
 }
 
