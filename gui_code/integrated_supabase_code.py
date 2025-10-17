@@ -126,6 +126,10 @@ list_of_assignments = {
     "Career_Vision_Board": {
         "status": "assignment_career_vision_board",
         "comment": "comments_assignment_career_vision_board"
+    },
+    "CV_Resume": {
+        "status": "assignment_cv_resume",
+        "comment": "comments_assignment_cv_resume"
     }
 }
 
