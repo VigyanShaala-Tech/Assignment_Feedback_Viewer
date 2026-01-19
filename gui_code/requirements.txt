@@ -5,3 +5,5 @@ Pillow
 supabase
 gspread
 pytz
+sqlalchemy
+dotenv
