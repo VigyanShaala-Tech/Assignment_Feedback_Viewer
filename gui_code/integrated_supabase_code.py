@@ -1,48 +1,38 @@
 import streamlit as st
 import pandas as pd
-import re
-from PIL import Image
-from supabase import create_client, Client
-import gspread
-from google.oauth2.service_account import Credentials
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+import os, textwrap
 from datetime import datetime
 import pytz
 
-SUPABASE_URL = st.secrets['supabase']['supabase_url']
-SUPABASE_KEY = st.secrets['supabase']['supabase_key']
+# ---------------------------------------------------
+# Load environment variables + create DB engine
+# ---------------------------------------------------
+load_dotenv("config.env")
 
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive"
-]
-credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=SCOPES)
-client = gspread.authorize(credentials)
-sheet = client.open("Student_Activity_Log").worksheet("Logs")
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASSWORD")
+DB_PORT = os.getenv("DB_PORT")
+COHORT_CODE = os.getenv("COHORT_CODE")
 
-@st.cache_resource
-def init_supabase():
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
 
-supabase: Client = init_supabase()
+engine = create_engine(
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
 
-def fetch_all_rows():
-    all_rows = []
-    page_size = 1000
-    for i in range(0, 10000, page_size):  # up to 10,000 rows
-        response = supabase.table('Student_Assignment_Status').select("*").range(i, i + page_size - 1).execute()
-        data = response.data
-        if not data:
-            break
-        all_rows.extend(data)
-        if len(data) < page_size:
-            break
-    return pd.DataFrame(all_rows)
+# ---------------- SESSION STATE INITIALIZATION ----------------
 
-@st.cache_data(ttl=300)
-def load_data_from_supabase():
-    try:
-        return fetch_all_rows()
-    except Exception as e:
-        st.error(f"Error loading data from Supabase: {str(e)}")
-        return pd.DataFrame()
+if "prev_assignment" not in st.session_state:
+    st.session_state.prev_assignment = None
+
+if "show_status" not in st.session_state:
+    st.session_state.show_status = False
+
+if "view_logged" not in st.session_state:
+    st.session_state.view_logged = False
 
 
 st.markdown("""
@@ -86,90 +76,166 @@ st.markdown("""
 
 co1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    st.image("gui_code/log.png", width=350)
+    st.image(r"C:\Assignment_Feedback_UI\Assignment_Feedback_Viewer\gui_code\log.png", width=350)
 
-df = load_data_from_supabase()
 
-if df.empty:
-    st.error("No data could be loaded from Supabase. Please check your connection.")
-    st.stop()
+# ---------------------------------------------------
+# SQL Queries (For each UI element)
+# ---------------------------------------------------
 
-list_of_assignments = {
-    "SWOT": {
-        "status": "assignment_swot",
-        "comment": "comments_assignment_swot"
-    },    
-    "Goal Setting": {
-        "status": "assignment_goal_setting",
-        "comment": "comments_assignment_goal_setting"
-    },
-    "LinkedIn Profile": {
-        "status": "assignment_linkedin_profile",
-        "comment": "comments_assignment_linkedin_profile"
-    },
-    "STEM Curiosity": {
-        "status": "assignment_stem_curiosity",
-        "comment": "comments_assignment_stem_curiosity"
-    },
-    "Career Journal": {
-        "status": "assignment_career_journal",
-        "comment": "comments_assignment_career_journal"
-    },
-    "Career Map": {
-        "status": "assignment_career_map",
-        "comment": "comments_assignment_career_map"
-    },
-    "Skill Gap Finder": {
-        "status": "assignment_skill_gap_finder",
-        "comment": "comments_assignment_skill_gap_finder"
-    },
-    "Career_Vision_Board": {
-        "status": "assignment_career_vision_board",
-        "comment": "comments_assignment_career_vision_board"
-    },
-    "CV_Resume": {
-        "status": "assignment_cv_resume",
-        "comment": "comments_assignment_cv_resume"
-    }
-}
+
+Query_Colleges = text(textwrap.dedent("""
+    SELECT DISTINCT 
+    cm.standard_college_names AS college_name
+    FROM raw.student_education se
+    INNER JOIN raw.student_cohort sc
+    ON se.student_id = sc.student_id
+    LEFT JOIN raw.college_mapping cm
+    ON se.college_id = cm.college_id 
+    WHERE sc.cohort_code = :cohort_code
+        AND cm.standard_college_names IS NOT NULL
+    ORDER BY cm.standard_college_names;
+"""))
+
+
+# Students for selected college
+QUERY_STUDENTS = text(textwrap.dedent("""
+    WITH filtered_students AS (
+        SELECT DISTINCT
+            se.student_id
+        FROM raw.student_education se
+        INNER JOIN raw.college_mapping cm
+            ON se.college_id = cm.college_id
+        WHERE cm.standard_college_names = :college
+    )
+
+    SELECT 
+        sd.id AS student_id,
+        concat_ws(' ',
+            trim(sd.first_name),
+            trim(sd.last_name)
+        ) AS student_name,
+        email
+    FROM raw.student_details sd
+    INNER JOIN filtered_students fs
+        ON sd.id = fs.student_id
+    WHERE sd.first_name IS NOT NULL
+      AND sd.last_name IS NOT NULL
+    ORDER BY student_name;
+"""))
+
+
+# Assignments for selected student
+QUERY_ASSIGNMENTS = text(textwrap.dedent("""
+    SELECT
+        sa.student_id,
+        sa.resource_id,
+        r.title AS resource_title,
+        sa.submission_status,
+        sa.marks_pct,
+        sa.feedback_comments,
+        sa.submitted_at
+    FROM raw.student_assignment sa
+    INNER JOIN raw.resource r
+        ON sa.resource_id = r.id
+    WHERE sa.student_id = :student_id
+    ORDER BY sa.submitted_at DESC;
+"""))
+
+# Latest status + comment
+QUERY_LATEST_STATUS = text(textwrap.dedent("""
+    SELECT submission_status, feedback_comments, submitted_at
+    FROM raw.student_assignment
+    WHERE student_id = :student_id
+      AND resource_id = :resource_id
+    ORDER BY submitted_at DESC
+    LIMIT 1;
+"""))
+
+QUERY_FEEDBACK_HISTORY = text(textwrap.dedent("""
+    SELECT
+        submission_status,
+        feedback_comments,
+        submitted_at
+    FROM raw.student_assignment
+    WHERE student_id = :student_id
+      AND resource_id = :resource_id
+    ORDER BY submitted_at DESC
+    OFFSET 1;
+"""))
+
+QUERY_INSERT_ACTIVITY = text("""
+    INSERT INTO raw.activity_log (
+        activity_time,
+        college_name,
+        student_name,
+        assignment_name,
+        assignment_status,
+        action,
+        feedback
+    )
+    VALUES (
+        :activity_time,
+        :college_name,
+        :student_name,
+        :assignment_name,
+        :assignment_status,
+        :action,
+        :feedback
+    );
+""")
+
+# ---------------------------------------------------
+# Helper Functions
+# ---------------------------------------------------
+
+def get_colleges():
+    with engine.begin() as conn:
+        result = conn.execute(Query_Colleges,{"cohort_code": COHORT_CODE})
+        return [row.college_name for row in result]
+    
+def get_students(college):
+    with engine.begin() as conn:
+        return pd.read_sql(QUERY_STUDENTS,conn,params={"college": college})
+
+def get_assignments(student_id):
+    student_id = int(student_id)
+    with engine.begin() as conn:
+        return pd.read_sql(QUERY_ASSIGNMENTS,conn,params={"student_id": student_id})
+
+def get_latest_assignment_status(student_id, resource_id):
+    with engine.begin() as conn:
+        return pd.read_sql(QUERY_LATEST_STATUS,conn,params={"student_id": int(student_id),"resource_id": int(resource_id)})
 
 def get_status(remark):
-    if remark.strip().lower() == 'not submitted':
-        return "Not Submitted", "red"
-    elif remark.strip().lower() == 'accepted':
-        return "Accepted", "green"
-    elif remark.strip().lower() == 'rejected':
-        return "Improve and Resubmit", "orange"
-    else:
-        return "Under Review", "pink"
+    if not remark:
+        return "Under Review", "gray"
 
-def clean_line_end(line):
-    if isinstance(line, str):
-        cleaned = re.sub(r'[^\x00-\x7F]+', '', line)
-        cleaned = re.sub(r'_x[0-9A-Fa-f]{4}_', '', cleaned)
-        cleaned = re.sub(r'[^a-zA-Z0-9\s.#]', '', cleaned)
-        cleaned = re.sub(r'\s+', ' ', cleaned)
-        return cleaned.strip()
-    return line
+    remark_clean = remark.strip().lower()
 
-def parse_feedback(comment):
-    if pd.isna(comment) or not comment:
-        return "", ""
-    cleaned_comment = clean_line_end(comment)
-    hash_count = cleaned_comment.count('#')
-    parts = cleaned_comment.split('#')
-    parts = [part.strip() for part in parts if part.strip()]
-    num_parts = len(parts)
-    if num_parts == 0:
-        return "", ""
-    elif hash_count == 1:
-        return "", cleaned_comment
-    else:
-        history = ' # '.join(parts[:-1])
-        current = parts[-1]
-        return history, current
+    status_map = {
+        "not submitted": ("Not Submitted", "red"),
+        "accepted": ("Accepted", "green"),
+        "rejected": ("Improve and Resubmit", "orange"),
+        "submitted": ("Under Review", "blue"),
+        "pending": ("Under Review", "pink"),
+    }
 
+    return status_map.get(
+        remark_clean,
+        ("Under Review", "gray")
+    )
+
+def get_feedback_history(student_id, resource_id):
+    with engine.begin() as conn:
+        return pd.read_sql(QUERY_FEEDBACK_HISTORY,conn,params={"student_id": int(student_id),"resource_id": int(resource_id)})
+
+# ---------------------------------------------------
+# STREAMLIT UI
+# ---------------------------------------------------
 st.title(" Assignment Feedback Viewer")
+
+#Splits the page horizontally into two columns.
 col1, col2 = st.columns([12, 1])
 with col1:
     st.info("Please click adjacent refresh button to refresh the app")
@@ -178,86 +244,222 @@ with col2:
     if st.button("↻", help="Click to refresh"):
         st.session_state["college_select"] = "-- Select College --"
 
-college_list = ['-- Select College --'] + df['college_name'].dropna().unique().tolist()
-selected_college = st.selectbox("College Names", sorted(college_list), index=0, key="college_select")
-if selected_college == '-- Select College --':
+# ----------------- Select College -----------------
+
+college_list = ["-- Select College --"] + get_colleges()
+
+selected_college = st.selectbox("College Names", college_list, key="college_select")
+
+if selected_college == "-- Select College --":
     st.warning("Please select a college to view student assignments.")
     st.stop()
 
-college_students = df[df['college_name'] == selected_college][['student_name', 'email']].dropna(subset=['student_name'])
-students = college_students['student_name'].unique()
+# ----------------- Select Student -----------------
 
-selected_student = st.selectbox("Student Names", sorted(students), key="student_select")
 
-# Check if the selected student name appears more than once
-student_entries = college_students[college_students['student_name'] == selected_student]
+students_df = get_students(selected_college)
+student_list = ["-- Select Student --"] + sorted(students_df["student_name"].dropna().unique().tolist())
 
-if len(student_entries) > 1:
-    # Show dropdown of emails if multiple students with the same name
-    selected_email = st.selectbox("Select Email ID", student_entries['email'].unique(), key="email_select")
+selected_student = st.selectbox("Student Names", student_list)
+
+if selected_student == "-- Select Student --":
+    st.stop()
+
+matched_students = students_df[
+    students_df["student_name"] == selected_student]
+
+if len(matched_students) > 1:
+   
+
+    email_list = ["-- Select Email --"] + matched_students["email"].tolist()
+
+    selected_email = st.selectbox(
+        "Select Email ID",
+        email_list
+    )
+
+    if selected_email == "-- Select Email --":
+        st.stop()
+
+    student_id = matched_students.loc[
+        matched_students["email"] == selected_email,
+        "student_id"
+    ].iloc[0]
+
 else:
-    selected_email = student_entries['email'].iloc[0]
+    # Only one student
+    student_id = matched_students["student_id"].iloc[0]
 
-assignment_list = list(list_of_assignments.keys())
-selected_assignment = st.selectbox("Assignment Names", assignment_list, key="assignment_select")
 
-status_col = list_of_assignments[selected_assignment]["status"]
-comment_col = list_of_assignments[selected_assignment]["comment"]
+# ----------------- Select Assignment -----------------
 
-if len(student_entries) > 1:
-    student_row = df[(df['college_name'] == selected_college) &
-                     (df['student_name'] == selected_student) &
-                     (df['email'] == selected_email)]
-else:
-    student_row = df[(df['college_name'] == selected_college) &
-                     (df['student_name'] == selected_student)]
 
-if student_row.empty:
-    st.warning("No data found for the selected combination.")
-else:
-    assignment_status = student_row.iloc[0][status_col]
-    comment = student_row.iloc[0][comment_col]
-    status_text, status_color = get_status(assignment_status)
-    feedback_history, current_feedback = parse_feedback(comment)
+assignments_df = get_assignments(student_id)
+assignment_list = ["-- Select Assignment --"] + assignments_df["resource_title"].unique().tolist()
 
-    st.markdown(f"### Assignment: {selected_assignment}")
-    if st.button("Show Assignment Status"):
-        st.markdown(f"<div class='status-box status-{status_color}'>{status_text}</div>", unsafe_allow_html=True)
-        st.markdown("### Current Feedback:")
-        if not current_feedback:
-            st.info("No feedback provided yet.")
-        else:
-            for line in current_feedback.split('\n'):
-                if line.strip():
-                    st.text(f"- {line.strip()}.")
+selected_assignment = st.selectbox("Assignment Names", assignment_list)
 
-        st.markdown("### Feedback History:")
-        if not feedback_history:
-            st.info("No feedback history available.")
-        else:
-            parts = feedback_history.split('#')
-            for idx, part in enumerate(parts, start=1):
-                if part.strip():
-                    st.text(f"- Feedback{idx}: {part.strip()}.")
+if selected_assignment == "-- Select Assignment --":
+    st.stop()
 
-        time = datetime.now(pytz.timezone('Asia/Kolkata'))
-        timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
-        log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, "Viewed", current_feedback or "No feedback Provided"]
-        try:
-            sheet.append_row(log_row)
-        except Exception as e:
-            st.error(f"Could not log activity: {str(e)}")
+if st.session_state.prev_assignment != selected_assignment:
+    st.session_state.prev_assignment = selected_assignment
+    st.session_state.show_status = False
+    st.session_state.view_logged = False
+resource_id = assignments_df.loc[assignments_df["resource_title"] == selected_assignment,"resource_id"].iloc[0]
 
-    feedback_str = f"Student: {selected_student}\nCollege: {selected_college}\nAssignment: {selected_assignment}\nStatus: {status_text}\n\n"    
-    feedback_str += f"Current Feedback:\n{current_feedback if current_feedback else 'No feedback provided.'}\n\n"
-    feedback_str += f"Feedback History:\n{feedback_history if feedback_history else 'No feedback history available.'}"
+#------------------ Select Submission Status --------------
 
-    download_clicked = st.download_button("Download Complete Feedback",feedback_str,file_name=f"{selected_student}_{selected_assignment}_feedback.txt")
+if "show_status" not in st.session_state:
+    st.session_state.show_status = False
+
+st.markdown(
+    f"<h5 style='margin-bottom:4px;'> Assignment: {selected_assignment}</h5>",
+    unsafe_allow_html=True
+)
+
+
+if st.button("Show Assignment Status"):
+    st.session_state.show_status = True
+    
+latest = None
+status_text = None
+feedback_str = ""
+
+if st.session_state.show_status:
+    status_df = get_latest_assignment_status(student_id, resource_id)
+
+    if status_df.empty:
+        st.warning("No submission found for this assignment.")
+        st.stop()
+
+    latest = status_df.iloc[0]
+
+    # ---------- STATUS BADGE ----------
+    status_text, color = get_status(latest["submission_status"])
+
+    st.session_state.viewed_status = status_text
+    st.session_state.viewed_feedback = latest["feedback_comments"] or "No feedback provided"
+
+    st.markdown(
+        f"""
+        <div style="
+            padding:10px 14px;
+            border-radius:8px;
+            background-color:{color};
+            color:white;
+            font-weight:bold;
+            width:fit-content;
+            margin-bottom:10px;
+        ">
+            {status_text}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ---------- FEEDBACK ----------
+    st.markdown(
+        f"<h5 style='margin-bottom:4px;'> Current Feedback:</h5>",
+        unsafe_allow_html=True
+    )
+    st.write(
+        latest["feedback_comments"]
+        if latest["feedback_comments"]
+        else "No feedback provided yet."
+    )
+
+
+    activity_time = datetime.now(pytz.timezone("Asia/Kolkata")).replace(tzinfo=None)
+
+    if not st.session_state.get("view_logged", False):
+        with engine.begin() as conn:
+            conn.execute(
+                QUERY_INSERT_ACTIVITY,
+                {
+                    "activity_time": activity_time,
+                    "college_name": selected_college,
+                    "student_name": selected_student,
+                    "assignment_name": selected_assignment,
+                    "assignment_status": status_text,
+                    "action": "Viewed",
+                    "feedback": latest["feedback_comments"] or "No feedback provided"
+                }
+            )
+
+        st.session_state.view_logged = True
+
+#------- SELECT HISTORY FEEDBACK ---------
+
+    history_df = get_feedback_history(student_id, resource_id)
+
+    st.markdown(f"<h5 style='margin-bottom:4px;'> Feedback History:</h5>",unsafe_allow_html=True)
+
+    feedback_no = 1
+    if history_df.empty:
+        st.caption("No previous feedback available.")
+    else:
+        for _, row in history_df.iterrows():
+            status_text, _ = get_status(row["submission_status"])
+            if status_text != "Under Review":
+                st.write(f"Feedback {feedback_no}:")
+                st.write(row["feedback_comments"] or "No feedback provided.")
+                feedback_no += 1
+
+feedback_str = ""  # IMPORTANT: initialize as string
+
+if latest is not None:
+    feedback_str = f"""
+College: {selected_college}
+Student: {selected_student}
+Assignment: {selected_assignment}
+
+Latest Status: {status_text}
+Latest Feedback:
+{latest["feedback_comments"] or "No feedback provided."}
+
+Previous Feedback:
+"""
+
+    if history_df.empty:
+        feedback_str += "No previous feedback available.\n"
+    else:
+        for _, row in history_df.iterrows():
+            hist_status, _ = get_status(row["submission_status"])
+
+            feedback_str += f"\nStatus: {hist_status}\n"
+            feedback_str += f"Submitted At: {row['submitted_at']}\n"
+
+            #  SAME RULE AS UI
+            if hist_status != "Under Review":
+                feedback_str += "Feedback:\n"
+                feedback_str += (row["feedback_comments"] or "No feedback provided.") + "\n"
+
+            feedback_str += "-" * 25 + "\n"
+
+if st.session_state.show_status:
+    download_clicked = st.download_button(
+        "Download Complete Feedback",
+        feedback_str,
+        file_name=f"{selected_student}_{selected_assignment}_feedback.txt"
+    )
+
     if download_clicked:
-        time = datetime.now(pytz.timezone('Asia/Kolkata'))
-        timestamp = time.strftime('%d-%m-%Y %H:%M:%S')
-        log_row = [timestamp, selected_college, selected_student, selected_assignment, status_text, "Downloaded", current_feedback or "No feedback Provided"]
+        activity_time = datetime.now(pytz.timezone("Asia/Kolkata")).replace(tzinfo=None)
+
         try:
-            sheet.append_row(log_row)
+            with engine.begin() as conn:
+                conn.execute(
+                    QUERY_INSERT_ACTIVITY,
+                    {
+                        "activity_time": activity_time,
+                        "college_name": selected_college,
+                        "student_name": selected_student,
+                        "assignment_name": selected_assignment,
+                        "assignment_status": st.session_state.viewed_status,
+                        "action": "Downloaded", 
+                        "feedback": st.session_state.viewed_feedback
+                    }
+                )
         except Exception as e:
             st.error(f"Could not log activity: {str(e)}")
