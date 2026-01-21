@@ -2,6 +2,6 @@ pandas
 streamlit
 Image
 Pillow
-supabase
-gspread
 pytz
+sqlalchemy
+dotenv
