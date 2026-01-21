@@ -165,7 +165,7 @@ QUERY_FEEDBACK_HISTORY = text(textwrap.dedent("""
 """))
 
 QUERY_INSERT_ACTIVITY = text("""
-    INSERT INTO raw.activity_log (
+    INSERT INTO old.activity_log (
         activity_time,
         college_name,
         student_name,
