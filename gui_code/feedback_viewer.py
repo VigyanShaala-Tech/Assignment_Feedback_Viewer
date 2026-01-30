@@ -5,23 +5,11 @@ from dotenv import load_dotenv
 import os, textwrap
 from datetime import datetime
 import pytz
+from db_connection import get_engine, COHORT_CODE
+from queries import *
+from status_timestamp_utils import get_status, ist_now
 
-# ---------------------------------------------------
-# Load environment variables + create DB engine
-# ---------------------------------------------------
-load_dotenv("config.env")
-
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASSWORD")
-DB_PORT = os.getenv("DB_PORT")
-COHORT_CODE = os.getenv("COHORT_CODE")
-
-
-engine = create_engine(
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-)
+engine = get_engine()
 
 # ---------------- SESSION STATE INITIALIZATION ----------------
 
@@ -76,114 +64,13 @@ st.markdown("""
 
 co1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    st.image(r"C:\Assignment_Feedback_UI\Assignment_Feedback_Viewer\gui_code\log.png", width=350)
+    st.image(r"C:\Users\vigya\OneDrive - VigyanShaala\Desktop\Assignment_Feedback_viewer\Assignment_Feedback_UI\Assignment_Feedback_Viewer\gui_code\log.png", width=350)
 
 
 # ---------------------------------------------------
 # SQL Queries (For each UI element)
 # ---------------------------------------------------
 
-
-Query_Colleges = text(textwrap.dedent("""
-    SELECT DISTINCT 
-    cm.standard_college_names AS college_name
-    FROM raw.student_education se
-    INNER JOIN raw.student_cohort sc
-    ON se.student_id = sc.student_id
-    LEFT JOIN raw.college_mapping cm
-    ON se.college_id = cm.college_id 
-    WHERE sc.cohort_code = :cohort_code
-        AND cm.standard_college_names IS NOT NULL
-    ORDER BY cm.standard_college_names;
-"""))
-
-
-# Students for selected college
-QUERY_STUDENTS = text(textwrap.dedent("""
-    WITH filtered_students AS (
-        SELECT DISTINCT
-            se.student_id
-        FROM raw.student_education se
-        INNER JOIN raw.college_mapping cm
-            ON se.college_id = cm.college_id
-        WHERE cm.standard_college_names = :college
-    )
-
-    SELECT 
-        sd.id AS student_id,
-        concat_ws(' ',
-            trim(sd.first_name),
-            trim(sd.last_name)
-        ) AS student_name,
-        email
-    FROM raw.student_details sd
-    INNER JOIN filtered_students fs
-        ON sd.id = fs.student_id
-    WHERE sd.first_name IS NOT NULL
-      AND sd.last_name IS NOT NULL
-    ORDER BY student_name;
-"""))
-
-
-# Assignments for selected student
-QUERY_ASSIGNMENTS = text(textwrap.dedent("""
-    SELECT
-        sa.student_id,
-        sa.resource_id,
-        r.title AS resource_title,
-        sa.submission_status,
-        sa.marks_pct,
-        sa.feedback_comments,
-        sa.submitted_at
-    FROM raw.student_assignment sa
-    INNER JOIN raw.resource r
-        ON sa.resource_id = r.id
-    WHERE sa.student_id = :student_id
-    ORDER BY sa.submitted_at DESC;
-"""))
-
-# Latest status + comment
-QUERY_LATEST_STATUS = text(textwrap.dedent("""
-    SELECT submission_status, feedback_comments, submitted_at
-    FROM raw.student_assignment
-    WHERE student_id = :student_id
-      AND resource_id = :resource_id
-    ORDER BY submitted_at DESC
-    LIMIT 1;
-"""))
-
-QUERY_FEEDBACK_HISTORY = text(textwrap.dedent("""
-    SELECT
-        submission_status,
-        feedback_comments,
-        submitted_at
-    FROM raw.student_assignment
-    WHERE student_id = :student_id
-      AND resource_id = :resource_id
-    ORDER BY submitted_at DESC
-    OFFSET 1;
-"""))
-
-QUERY_INSERT_ACTIVITY = text("""
-    INSERT INTO old.activity_log (
-        activity_time,
-        college_name,
-        student_name,
-        assignment_name,
-        assignment_status,
-        action,
-        feedback
-    )
-    VALUES (
-        :activity_time,
-        :college_name,
-        :student_name,
-        :assignment_name,
-        :assignment_status,
-        :action,
-        :feedback
-    );
-""")
 
 # ---------------------------------------------------
 # Helper Functions
@@ -207,24 +94,7 @@ def get_latest_assignment_status(student_id, resource_id):
     with engine.begin() as conn:
         return pd.read_sql(QUERY_LATEST_STATUS,conn,params={"student_id": int(student_id),"resource_id": int(resource_id)})
 
-def get_status(remark):
-    if not remark:
-        return "Under Review", "gray"
 
-    remark_clean = remark.strip().lower()
-
-    status_map = {
-        "not submitted": ("Not Submitted", "red"),
-        "accepted": ("Accepted", "green"),
-        "rejected": ("Improve and Resubmit", "orange"),
-        "submitted": ("Under Review", "blue"),
-        "pending": ("Under Review", "pink"),
-    }
-
-    return status_map.get(
-        remark_clean,
-        ("Under Review", "gray")
-    )
 
 def get_feedback_history(student_id, resource_id):
     with engine.begin() as conn:
@@ -370,7 +240,7 @@ if st.session_state.show_status:
     )
 
 
-    activity_time = datetime.now(pytz.timezone("Asia/Kolkata")).replace(tzinfo=None)
+    activity_time = ist_now()
 
     if not st.session_state.get("view_logged", False):
         with engine.begin() as conn:
