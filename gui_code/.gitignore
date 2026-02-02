@@ -1,0 +1,10 @@
+# Virtual environments
+# ---------------------------------
+venv/
+.venv/
+env/
+
+#connection.py    
+config.yaml
+credentials.json
+config.env
