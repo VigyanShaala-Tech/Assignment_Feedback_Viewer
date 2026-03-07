@@ -83,12 +83,12 @@ def get_colleges():
     
 def get_students(college):
     with engine.begin() as conn:
-        return pd.read_sql(QUERY_STUDENTS,conn,params={"college": college})
+        return pd.read_sql(QUERY_STUDENTS,conn,params={"college": college, "cohort_code": COHORT_CODE})
 
 def get_assignments(student_id):
     student_id = int(student_id)
     with engine.begin() as conn:
-        return pd.read_sql(QUERY_ASSIGNMENTS,conn,params={"student_id": student_id})
+        return pd.read_sql(QUERY_ASSIGNMENTS,conn,params={"student_id": student_id, "cohort_code": COHORT_CODE})
 
 def get_latest_assignment_status(student_id, resource_id):
     with engine.begin() as conn:
