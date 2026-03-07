@@ -8,7 +8,7 @@ Query_Colleges = text(textwrap.dedent("""
     FROM raw.student_education se
     INNER JOIN raw.student_cohort sc
     ON se.student_id = sc.student_id
-    LEFT JOIN raw.college_mapping cm
+    INNER JOIN raw.college_mapping cm
     ON se.college_id = cm.college_id 
     WHERE sc.cohort_code = :cohort_code
         AND cm.standard_college_names IS NOT NULL
@@ -23,10 +23,13 @@ QUERY_STUDENTS = text(textwrap.dedent("""
         FROM raw.student_education se
         INNER JOIN raw.college_mapping cm
             ON se.college_id = cm.college_id
+        INNER JOIN raw.student_cohort sc
+            ON se.student_id = sc.student_id
         WHERE cm.standard_college_names = :college
+            AND sc.cohort_code = :cohort_code                           
     )
 
-    SELECT 
+    SELECT DISTINCT
         sd.id AS student_id,
         concat_ws(' ',
             trim(sd.first_name),
@@ -54,6 +57,9 @@ QUERY_ASSIGNMENTS = text(textwrap.dedent("""
     FROM raw.student_assignment sa
     INNER JOIN raw.resource r
         ON sa.resource_id = r.id
+    INNER JOIN raw.student_cohort sc
+        ON sa.student_id = sc.student_id
+        AND sc.cohort_code = :cohort_code
     WHERE sa.student_id = :student_id
     ORDER BY sa.submitted_at DESC;
 """))
